@@ -34,8 +34,16 @@
 #ifdef __GNUC__
 // Tell GCC to validate printf format string and args
 #define ATTRIBUTE(list) __attribute__ (list)
+#define likely(x)       __builtin_expect(!!(x), 1)
+#define unlikely(x)     __builtin_expect(!!(x), 0)
+#define if_usual(x)       if (likely(x))
+#define if_ever(x)     if (unlikely(x))
 #else
 #define ATTRIBUTE(list)
+#define likely(x)       (x)
+#define unlikely(x)     (x)
+#define if_usual(x)       if ((x))
+#define if_ever(x)     if ((x))
 #endif
 
 
