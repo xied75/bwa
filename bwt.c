@@ -128,8 +128,20 @@ void bwt_cal_sa(bwt_t *bwt, int intv)
 
 bwtint_t bwt_sa(const bwt_t *bwt, bwtint_t k)
 {
-	bwtint_t sa = 0;
-	while (k % bwt->sa_intv != 0) {
+	bwtint_t m, add, sa = 0;
+	m = bwt->sa_intv;
+	if (m-- & m) { // not power of 2 and decrement
+		add = m;
+		m |= m>>1;
+		m |= m>>2;
+		m |= m>>4;
+		m |= m>>8;
+		m |= m>>16;
+		add ^= m;
+	} else {
+		add = 0;
+	}
+	while (((k + add) & m)) {
 		++sa;
 		k = cal_isa(bwt, k);
 	}
