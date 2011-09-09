@@ -79,7 +79,6 @@ extern "C" {
 
 	void bwt_bwtupdate_core(bwt_t *bwt);
 
-	inline bwtint_t bwt_occ(const bwt_t *bwt, const uint64_t x, bwtint_t k, ubyte_t c);
 	inline void bwt_occ4(const bwt_t *bwt, bwtint_t k, bwtint_t cnt[4]);
 	bwtint_t bwt_sa(const bwt_t *bwt, bwtint_t k);
 
