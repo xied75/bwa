@@ -157,13 +157,6 @@ bwa_seq_t *bwa_read_seq(bwa_seqio_t *bs, int n_needed, int *n, int mode, int tri
 	n_seqs = 0;
 	seqs = (bwa_seq_t*)calloc(n_needed, sizeof(bwa_seq_t));
 	while ((l = kseq_read(seq)) >= 0) {
-		if ((mode & BWA_MODE_CFY) && (seq->comment.l != 0)) {
-			// skip reads that are marked to be filtered by Casava
-			char *s = index(seq->comment.s, ':');
-			if (s && *(++s) == 'Y') {
-				continue;
-			}
-		}
 		if (is_64 && seq->qual.l)
 			for (i = 0; i < seq->qual.l; ++i) seq->qual.s[i] -= 31;
 		if (seq->seq.l <= l_bc) continue; // sequence length equals or smaller than the barcode length
@@ -198,9 +191,17 @@ bwa_seq_t *bwa_read_seq(bwa_seqio_t *bs, int n_needed, int *n, int mode, int tri
 		seq_reverse(p->len, p->seq, 0); // *IMPORTANT*: will be reversed back in bwa_refine_gapped()
 		seq_reverse(p->len, p->rseq, is_comp);
 		p->name = strdup((const char*)seq->name.s);
-		{ // trim /[12]$
-			int t = strlen(p->name);
-			if (t > 2 && p->name[t-2] == '/' && (p->name[t-1] == '1' || p->name[t-1] == '2')) p->name[t-2] = '\0';
+		{
+			char *s;
+			if (seq->comment.l != 0 && (s = index(seq->comment.s, ':'))) {
+				// mark reads that fail Casava 1.8+ quality checks
+				if (s && *(++s) == 'Y' && *(++s) == ':')
+					p->extra_flag |= SAM_FQF;
+			} else if (seq->seq.l > 2) {
+				s = &p->name[seq->seq.l-2];
+				if (*s == '/' && (s[1] == '1' || s[1] == '2')) // trim /[12]$
+					*s = '\0';
+			}
 		}
 		if (n_seqs == n_needed) break;
 	}

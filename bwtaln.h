@@ -18,6 +18,7 @@
 #define SAM_FR1  64 // this is read one
 #define SAM_FR2 128 // this is read two
 #define SAM_FSC 256 // secondary alignment
+#define SAM_FQF 512 // fails platform/vendor quality checks
 
 #define BWA_AVG_ERR 0.02
 #define BWA_MIN_RDLEN 35 // for read trimming
@@ -86,7 +87,6 @@ typedef struct {
 #define BWA_MODE_GAPE       0x01
 #define BWA_MODE_COMPREAD   0x02
 #define BWA_MODE_LOGGAP     0x04
-#define BWA_MODE_CFY        0x08
 #define BWA_MODE_NONSTOP    0x10
 #define BWA_MODE_BAM        0x20
 #define BWA_MODE_BAM_SE     0x40
