@@ -148,6 +148,7 @@ bwa_seq_t *bwa_read_seq(bwa_seqio_t *bs, int n_needed, int *n, int mode, int tri
 	kseq_t *seq = bs->ks;
 	int n_seqs, l, i, is_comp = mode&BWA_MODE_COMPREAD, is_64 = mode&BWA_MODE_IL13, l_bc = mode>>24;
 	long n_trimmed = 0, n_tot = 0;
+	char *s;
 
 	if (l_bc > BWA_MAX_BCLEN) {
 		fprintf(stderr, "[%s] the maximum barcode length is %d.\n", __func__, BWA_MAX_BCLEN);
@@ -157,10 +158,27 @@ bwa_seq_t *bwa_read_seq(bwa_seqio_t *bs, int n_needed, int *n, int mode, int tri
 	n_seqs = 0;
 	seqs = (bwa_seq_t*)calloc(n_needed, sizeof(bwa_seq_t));
 	while ((l = kseq_read(seq)) >= 0) {
+		s = NULL;
+		if ((seq->comment.l != 0)) {
+			// skip reads that are marked to be filtered by Casava
+			s = index(seq->comment.s, ':');
+			if (s && *(++s) == 'Y' && (mode & BWA_MODE_CFY))
+				continue;
+		}
 		if (is_64 && seq->qual.l)
 			for (i = 0; i < seq->qual.l; ++i) seq->qual.s[i] -= 31;
 		if (seq->seq.l <= l_bc) continue; // sequence length equals or smaller than the barcode length
 		p = &seqs[n_seqs++];
+		i = seq->seq.l - 1;
+		if (s != NULL) { // mark reads that fail Casava 1.8+ quality checks
+			if (*s == 'Y')
+				p->extra_flag |= SAM_FQF;
+		} else if (seq->seq.l > 2) {
+			s = &seq->name.s[i];
+			if (s[-1] == '/' && (*s == '1' || *s == '2'))
+				i -= 3; // trim /[12]
+		}
+		p->name = strndup((const char*)seq->name.s, i);
 		if (l_bc) { // then trim barcode
 			for (i = 0; i < l_bc; ++i)
 				p->bc[i] = (seq->qual.l && seq->qual.s[i]-33 < BARCODE_LOW_QUAL)? tolower(seq->seq.s[i]) : toupper(seq->seq.s[i]);
@@ -190,19 +208,6 @@ bwa_seq_t *bwa_read_seq(bwa_seqio_t *bs, int n_needed, int *n, int mode, int tri
 		memcpy(p->rseq, p->seq, p->len);
 		seq_reverse(p->len, p->seq, 0); // *IMPORTANT*: will be reversed back in bwa_refine_gapped()
 		seq_reverse(p->len, p->rseq, is_comp);
-		p->name = strdup((const char*)seq->name.s);
-		{
-			char *s;
-			if (seq->comment.l != 0 && (s = index(seq->comment.s, ':'))) {
-				// mark reads that fail Casava 1.8+ quality checks
-				if (s && *(++s) == 'Y' && *(++s) == ':')
-					p->extra_flag |= SAM_FQF;
-			} else if (seq->seq.l > 2) {
-				s = &p->name[seq->seq.l-2];
-				if (*s == '/' && (s[1] == '1' || s[1] == '2')) // trim /[12]$
-					*s = '\0';
-			}
-		}
 		if (n_seqs == n_needed) break;
 	}
 	*n = n_seqs;
