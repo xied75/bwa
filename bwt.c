@@ -129,8 +129,8 @@ void bwt_cal_sa(bwt_t *bwt, int intv)
 bwtint_t bwt_sa(const bwt_t *bwt, bwtint_t k)
 {
 	bwtint_t m, add, sa = 0;
-	m = bwt->sa_intv;
-	if (m-- & m) { // not power of 2 and decrement
+	m = bwt->sa_intv - 1;
+	if ((m+1) & m) { // not power of 2 before decrement
 		add = m;
 		m |= m>>1;
 		m |= m>>2;
