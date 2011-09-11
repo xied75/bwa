@@ -58,9 +58,9 @@ static int bwt_cal_width(const bwt_t *rbwt, int len, const ubyte_t *str, bwt_wid
 	for (i = 0; i < len; ++i) {
 		ubyte_t c = str[i];
 		if (c < 4) {
-			bwt_2occ(rbwt, k - 1, l, c, &ok, &ol);
-			k = rbwt->L2[c] + ok + 1;
-			l = rbwt->L2[c] + ol;
+			bwt_2occ(rbwt, k, l, c, &ok, &ol);
+			k = ok;
+			l = ol;
 		}
 		if (k > l || c > 3) { // then restart
 			k = 0;
