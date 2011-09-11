@@ -51,17 +51,15 @@ int bwa_cal_maxdiff(int l, double err, double thres)
 // width must be filled as zero
 static int bwt_cal_width(const bwt_t *rbwt, int len, const ubyte_t *str, bwt_width_t *width)
 {
-	bwtint_t k, l, ok, ol;
+	bwtint_t k, l;
 	int i, bid;
 	bid = 0;
 	k = 0; l = rbwt->seq_len;
 	for (i = 0; i < len; ++i) {
 		ubyte_t c = str[i];
-		if (c < 4) {
-			bwt_2occ(rbwt, k, l, c, &ok, &ol);
-			k = ok;
-			l = ol;
-		}
+		if (c < 4)
+			bwt_2occ(rbwt, &k, &l, c);
+
 		if (k > l || c > 3) { // then restart
 			k = 0;
 			l = rbwt->seq_len;
