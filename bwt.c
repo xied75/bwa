@@ -99,14 +99,14 @@ static inline bwtint_t bwt_occ_3(bwtint_t l, const uint64_t *p)
 	}
 }
 
-static inline bwtint_t bwt_occ(const uint64_t *p, bwtint_t k, const ubyte_t c)
+static inline bwtint_t bwt_occ(const uint64_t *p, const bwtint_t ko, bwtint_t k, const ubyte_t c)
 {
 	bwtint_t n, l;
-	p += k / OCC_INTERVAL * 6;
+	p += ko * 6;
 	n = ((uint32_t *)p)[c];
-	k -= k / OCC_INTERVAL * OCC_INTERVAL;
+	k -= ko * OCC_INTERVAL;
 	l = k >> 5;
-	p += 2; // jump to the last BWT cell
+	p += 2; // jump to the start of the first BWT cell
 
 	// calculate Occ up to the last k/32
 	switch (c) {
@@ -125,12 +125,13 @@ static inline bwtint_t bwt_occ(const uint64_t *p, bwtint_t k, const ubyte_t c)
 
 static inline bwtint_t cal_isa(const bwt_t *bwt, bwtint_t isa)
 {
-	bwtint_t c, _isa;
+	bwtint_t c, _isa, isa_o;
 	if (isa != bwt->primary) {
 		_isa = (isa < bwt->primary) ? isa : isa - 1;
-		c = bwt_B0(bwt, _isa);
+		isa_o = _isa/OCC_INTERVAL;
+		c = bwt_B0(bwt, _isa, isa_o);
 		if (isa < bwt->seq_len) {
-			isa = bwt->L2[c] + bwt_occ((uint64_t *)bwt->bwt, _isa, c);
+			isa = bwt->L2[c] + bwt_occ((uint64_t *)bwt->bwt, isa_o, _isa, c);
 		} else {
 			isa = (isa == bwt->seq_len ? bwt->L2[c+1] : bwt->L2[c]);
 		}
@@ -189,49 +190,72 @@ bwtint_t bwt_sa(const bwt_t *bwt, bwtint_t k)
 // an analogy to bwt_occ() but more efficient, requiring k <= l
 inline void bwt_2occ(const bwt_t *bwt, bwtint_t *k, bwtint_t *l, ubyte_t c)
 {
-	const uint64_t x = n_mask[c];
-	bwtint_t _k, _l, n;
-	uint64_t *p;
+	bwtint_t i, m, n, lo;
+	const uint64_t *p;
 	n = *k - 1;
-	_k = (n >= bwt->primary)? n-1 : n;
-	_l = (*l >= bwt->primary)? *l-1 : *l;
-	if (_l/OCC_INTERVAL != _k/OCC_INTERVAL || n == (bwtint_t)(-1) ||
-			*l == (bwtint_t)(-1) || n == *l) {
-		if (n <= bwt->seq_len) {
-			p = (uint64_t *)bwt->bwt;
-			*k = bwt->L2[c] + bwt_occ(p, _k, c);
+	m = (n >= bwt->primary)? n-1 : n;
+	i = (*l >= bwt->primary)? *l-1 : *l;
+	n = m/OCC_INTERVAL;
+	lo = i/OCC_INTERVAL;
+	if (lo != n || *k == 0 || i == m) {
+		if (*k != 0) {
+			*k = bwt->L2[c] + bwt_occ((const uint64_t *)bwt->bwt, n, m, c) + 1;
+			if (i != m) {
+				*l = bwt->L2[c] +
+					bwt_occ((const uint64_t *)bwt->bwt, lo, i, c);
+			} else {
+				*l = *k;
+			}
 		} else {
-			*k = (n == (bwtint_t)(-1) ? bwt->L2[c] : bwt->L2[c+1]);
-		}
-		++*k;
-		if (*l <= bwt->seq_len && n != *l) {
-			p = (uint64_t *)bwt->bwt;
-			*l = bwt->L2[c] + bwt_occ(p, _l, c);
-		} else {
-			*l = (n == *l ? *k: (*l == (bwtint_t)(-1) ?
-				bwt->L2[c] : bwt->L2[c+1]));
+			*k = bwt->L2[c] + 1;
+			*l = bwt->L2[c+1];
 		}
 	} else {
-		bwtint_t i, j;
-		p = (uint64_t *)bwt->bwt;
-		i = _k/OCC_INTERVAL;
-		p += i * 6;
+		p = (const uint64_t *)bwt->bwt + n * 6;
+		*k = m & 31;
+		m = ((m - (n * OCC_INTERVAL)) >> 5); //k-len
+		*l = i & 31;
+		i = ((i - (lo * OCC_INTERVAL)) >> 5); //total len
 		n = ((uint32_t *)p)[c] + bwt->L2[c];
-		p += 2;
-		// calculate *ok
-		j = _k >> 5 << 5;
-		for (i = _k/OCC_INTERVAL*OCC_INTERVAL; i < j; i += 32, ++p)
-			n += __occ_aux(*p ^ x);
-
-		*k = n + __occ_aux((*p & occ_mask[_k&31]) ^ x) -
-			(c != 0 ? 0 : ~_k&31) + 1;
-		// calculate *ol
-		j = _l >> 5 << 5;
-		for (; i < j; i += 32, ++p)
-			n += __occ_aux(*p ^ x);
-
-		*l = n + __occ_aux((*p & occ_mask[_l&31]) ^ x) -
-			(c != 0 ? 0 : ~_l&31);
+		p += 2 + i; // jump to the end of the last BWT cell
+		i = i - m; //total len - k len = l-len
+		switch (c) {
+		case 0: *l = __occ_aux(~(*p & occ_mask[*l])) - (*l^31);
+			if (i) { // these (i) tests aren't always true (?)
+				*l += bwt_occ_0(i, p);
+				p -= i; //yes, postdecr: reverse iteration
+			}
+			*k = __occ_aux(~(*p & occ_mask[*k])) - (*k^31) + 1;
+			if (*k <= *l) {
+				if (m) n += bwt_occ_0(m, p);
+				*l += n;
+				*k += n ;
+			}
+			break;
+		case 3: *l = __occ_aux(*p & occ_mask[*l]);
+			if (i) {
+				*l += bwt_occ_3(i, p);
+				p -= i;
+			}
+			*k = __occ_aux(*p & occ_mask[*k]) + 1;
+			if (*k <= *l) {
+				if (m) n += bwt_occ_3(m, p);
+				*l += n;
+				*k += n;
+			}
+			break;
+		default: *l = __occ_aux((*p & occ_mask[*l]) ^ n_mask[c]);
+			if (i) {
+				*l += bwt_occ_x(n_mask[c], i, p);
+				p -= i;
+			}
+			*k = __occ_aux((*p & occ_mask[*k]) ^ n_mask[c]) + 1;
+			if (*k <= *l) {
+				if (m) n += bwt_occ_x(n_mask[c], m, p);
+				*l += n;
+				*k += n;
+			}
+		}
 	}
 }
 

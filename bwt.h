@@ -53,12 +53,12 @@ typedef struct {
 	bwtint_t *sa;
 } bwt_t;
 
-#define bwt_bwt(b, k) ((b)->bwt[(k)/OCC_INTERVAL*12 + 4 + (k)%OCC_INTERVAL/16])
+#define bwt_bwt(b, k, ko) ((b)->bwt[(ko)*12 + 4 + (k)%OCC_INTERVAL/16])
 
 /* retrieve a character from the $-removed BWT string. Note that
  * bwt_t::bwt is not exactly the BWT string and therefore this macro is
  * called bwt_B0 instead of bwt_B */
-#define bwt_B0(b, k) (bwt_bwt(b, k)>>((~(k)&0xf)<<1)&3)
+#define bwt_B0(b, k, ko) (bwt_bwt(b, k, ko)>>((~(k)&0xf)<<1)&3)
 
 #define bwt_occ_intv(b, k) ((b)->bwt + (k)/OCC_INTERVAL*12)
 
