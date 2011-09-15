@@ -84,7 +84,7 @@ extern "C" {
 
 	// more efficient version of bwt_occ/bwt_occ4 for retrieving two close Occ values
 	void bwt_gen_cnt_table(bwt_t *bwt);
-	inline void bwt_2occ(const bwt_t *bwt, bwtint_t *k, bwtint_t *l, ubyte_t c);
+	inline bwtint_t bwt_2occ(const bwt_t *bwt, bwtint_t k, bwtint_t *l, ubyte_t c);
 	inline void bwt_2occ4(const bwt_t *bwt, bwtint_t k, bwtint_t l, bwtint_t cntk[4], bwtint_t cntl[4]);
 
 	int bwt_match_exact(const bwt_t *bwt, int len, const ubyte_t *str, bwtint_t *sa_begin, bwtint_t *sa_end);

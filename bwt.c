@@ -188,75 +188,66 @@ bwtint_t bwt_sa(const bwt_t *bwt, bwtint_t k)
 }
 
 // an analogy to bwt_occ() but more efficient, requiring k <= l
-inline void bwt_2occ(const bwt_t *bwt, bwtint_t *k, bwtint_t *l, ubyte_t c)
+inline bwtint_t bwt_2occ(const bwt_t *bwt, bwtint_t k, bwtint_t *l, ubyte_t c)
 {
-	bwtint_t i, m, n, lo;
+	bwtint_t i, m, n, kr;
 	const uint64_t *p;
-	n = *k - 1;
+	n = k - 1;
 	m = (n >= bwt->primary)? n-1 : n;
 	i = (*l >= bwt->primary)? *l-1 : *l;
 	n = m/OCC_INTERVAL;
-	lo = i/OCC_INTERVAL;
-	if (lo != n || *k == 0 || i == m) {
-		if (*k != 0) {
-			*k = bwt->L2[c] + bwt_occ((const uint64_t *)bwt->bwt, n, m, c) + 1;
-			if (i != m) {
-				*l = bwt->L2[c] +
-					bwt_occ((const uint64_t *)bwt->bwt, lo, i, c);
-			} else {
-				*l = *k;
-			}
-		} else {
-			*k = bwt->L2[c] + 1;
-			*l = bwt->L2[c+1];
-		}
-	} else {
+	*l = i/OCC_INTERVAL;
+	kr = bwt->L2[c];
+	if (*l == n && k != 0) {
 		p = (const uint64_t *)bwt->bwt + n * 6;
-		*k = m & 31;
+		k = m & 31;
 		m = ((m - (n * OCC_INTERVAL)) >> 5); //k-len
-		*l = i & 31;
-		i = ((i - (lo * OCC_INTERVAL)) >> 5); //total len
-		n = ((uint32_t *)p)[c] + bwt->L2[c];
+		n = i & 31;
+		i = ((i - (*l * OCC_INTERVAL)) >> 5); //total len
+		kr += ((uint32_t *)p)[c];
 		p += 2 + i; // jump to the end of the last BWT cell
 		i = i - m; //total len - k len = l-len
-		switch (c) {
-		case 0: *l = __occ_aux(~(*p & occ_mask[*l])) - (*l^31);
-			if (i) { // these (i) tests aren't always true (?)
-				*l += bwt_occ_0(i, p);
-				p -= i; //yes, postdecr: reverse iteration
-			}
-			*k = __occ_aux(~(*p & occ_mask[*k])) - (*k^31) + 1;
-			if (*k <= *l) {
-				if (m) n += bwt_occ_0(m, p);
-				*l += n;
-				*k += n ;
-			}
-			break;
-		case 3: *l = __occ_aux(*p & occ_mask[*l]);
-			if (i) {
-				*l += bwt_occ_3(i, p);
-				p -= i;
-			}
-			*k = __occ_aux(*p & occ_mask[*k]) + 1;
-			if (*k <= *l) {
-				if (m) n += bwt_occ_3(m, p);
-				*l += n;
-				*k += n;
-			}
-			break;
-		default: *l = __occ_aux((*p & occ_mask[*l]) ^ n_mask[c]);
+		if (c != 0) {
+			*l = __occ_aux((*p & occ_mask[n]) ^ n_mask[c]);
 			if (i) {
 				*l += bwt_occ_x(n_mask[c], i, p);
 				p -= i;
 			}
-			*k = __occ_aux((*p & occ_mask[*k]) ^ n_mask[c]) + 1;
-			if (*k <= *l) {
-				if (m) n += bwt_occ_x(n_mask[c], m, p);
-				*l += n;
-				*k += n;
+			k = __occ_aux((*p & occ_mask[k]) ^ n_mask[c]) + 1;
+			if (k > *l) {
+				*l = bwt->seq_len;
+				return 0;
 			}
+			if (m) kr += bwt_occ_x(n_mask[c], m, p);
+		} else {
+			*l = __occ_aux(~(*p & occ_mask[n])) - (n^31);
+			if (i) {
+				*l += bwt_occ_0(i, p);
+				p -= i;
+			}
+			k = __occ_aux(~(*p & occ_mask[k])) - (k^31) + 1;
+			if (k > *l) {
+				*l = bwt->seq_len;
+				return 0;
+			}
+			if (m) kr += bwt_occ_0(m, p);
+		}
+		*l += kr;
+		kr += k;
+	} else {
+		if (k != 0) {
+			*l = kr + bwt_occ((const uint64_t *)bwt->bwt, *l, i, c);
+			kr += bwt_occ((const uint64_t *)bwt->bwt, n, m, c);
+			if (++kr > *l) {
+				*l = bwt->seq_len;
+				kr = 0;
+			}
+		} else {
+			*l = bwt->L2[c+1];
+			++kr;
 		}
 	}
+	return kr;
 }
 
 #define __occ_aux4(bwt, b)											\
@@ -330,11 +321,9 @@ int bwt_match_exact(const bwt_t *bwt, int len, const ubyte_t *str, bwtint_t *sa_
 	k = 0; l = bwt->seq_len;
 	for (i = len - 1; i >= 0; --i) {
 		ubyte_t c = str[i];
-		if (c > 3) return 0; // no match
-		bwt_2occ(bwt, &k, &l, c);
-		if (k > l) break; // no match
+		if (c > 3 || !(k = bwt_2occ(bwt, k, &l, c)))
+			return 0; // no match
 	}
-	if (k > l) return 0; // no match
 	if (sa_begin) *sa_begin = k;
 	if (sa_end)   *sa_end = l;
 	return l - k + 1;
@@ -347,9 +336,8 @@ int bwt_match_exact_alt(const bwt_t *bwt, int len, const ubyte_t *str, bwtint_t 
 	k = *k0; l = *l0;
 	for (i = len - 1; i >= 0; --i) {
 		ubyte_t c = str[i];
-		if (c > 3) return 0; // there is an N here. no match
-		bwt_2occ(bwt, &k, &l, c);
-		if (k > l) return 0; // no match
+		if (c > 3 || !(k = bwt_2occ(bwt, k, &l, c)))
+			return 0; // no match
 	}
 	*k0 = k; *l0 = l;
 	return l - k + 1;
