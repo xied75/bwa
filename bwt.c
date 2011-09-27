@@ -34,20 +34,20 @@
 #include "bwt.h"
 
 static const uint64_t occ_mask[32] = {
-	0xc0000000ull, 	0xf0000000ull, 	0xfc000000ull,
-	0xff000000ull, 	0xffc00000ull, 	0xfff00000ull,
-	0xfffc0000ull, 	0xffff0000ull, 	0xffffc000ull,
-	0xfffff000ull, 	0xfffffc00ull, 	0xffffff00ull,
-	0xffffffc0ull, 	0xfffffff0ull, 	0xfffffffcull,
-	0xffffffffull, 	0xc0000000ffffffffull, 	0xf0000000ffffffffull,
-	0xfc000000ffffffffull, 	0xff000000ffffffffull, 	0xffc00000ffffffffull,
-	0xfff00000ffffffffull, 	0xfffc0000ffffffffull, 	0xffff0000ffffffffull,
-	0xffffc000ffffffffull, 	0xfffff000ffffffffull, 	0xfffffc00ffffffffull,
-	0xffffff00ffffffffull, 	0xffffffc0ffffffffull, 	0xfffffff0ffffffffull,
-	0xfffffffcffffffffull, 0xffffffffffffffffull
+	0xc0000000ul, 	0xf0000000ul, 	0xfc000000ul,
+	0xff000000ul, 	0xffc00000ul, 	0xfff00000ul,
+	0xfffc0000ul, 	0xffff0000ul, 	0xffffc000ul,
+	0xfffff000ul, 	0xfffffc00ul, 	0xffffff00ul,
+	0xffffffc0ul, 	0xfffffff0ul, 	0xfffffffcul,
+	0xfffffffful, 	0xc0000000fffffffful, 	0xf0000000fffffffful,
+	0xfc000000fffffffful, 	0xff000000fffffffful, 	0xffc00000fffffffful,
+	0xfff00000fffffffful, 	0xfffc0000fffffffful, 	0xffff0000fffffffful,
+	0xffffc000fffffffful, 	0xfffff000fffffffful, 	0xfffffc00fffffffful,
+	0xffffff00fffffffful, 	0xffffffc0fffffffful, 	0xfffffff0fffffffful,
+	0xfffffffcfffffffful, 0xfffffffffffffffful
 };
-static const uint64_t n_mask[5] = { 0xffffffffffffffffull, 0xaaaaaaaaaaaaaaaaull, 
-		0x5555555555555555ull, 0x0ull, 0xffffffffffffffffull };
+static const uint64_t n_mask[5] = { 0xfffffffffffffffful, 0xaaaaaaaaaaaaaaaaul, 
+		0x5555555555555555ul, 0x0ul, 0xfffffffffffffffful };
 
 void bwt_gen_cnt_table(bwt_t *bwt)
 {
@@ -65,42 +65,120 @@ static inline int __occ_aux(uint64_t y)
 	// reduce nucleotide counting to bits counting
 	y = (y >> 1) & y;
 	// count the number of 1s in y
-	y = (y & 0x1111111111111111ull) + (y >> 2 & 0x1111111111111111ull);
-	return ((y + (y >> 4)) & 0xf0f0f0f0f0f0f0full) * 0x101010101010101ull >> 56;
+	y = (y & 0x1111111111111111ul) + (y >> 2 & 0x1111111111111111ul);
+	return ((y + (y >> 4)) & 0xf0f0f0f0f0f0f0ful) * 0x101010101010101ul >> 56;
+	// this, instead of return statement, also works:
+	//y = (y + (y >> 4u)) & 0x707070707070707ul; // at most 4 per f
+	//y = (y + (y >> 8u)) & 0xf000f000f000ful; // at most 8 per f
+	//y = (y + (y >> 16u)) & 0x1f0000001ful; // at most 16 per 1f
+	//return y + (y >> 32u);
 }
+
+#define __occ_aux_p(z) ({ 						\
+	z = (z >> 1) & z;						\
+	(z & 0x1111111111111111ul) + (z >> 2 & 0x1111111111111111ul);	\
+})
+
+#define __occ_aux_p2(y) ({						\
+	y = y + (y >> 4u);						\
+	(y & 0xf0f0f0f0f0f0f0ful) * 0x101010101010101ul >> 56;		\
+/*	y = (y + (y >> 4u)) & 0x0f0f0f0f0f0f0f0ful;			\
+	y = (y + (y >> 8u)) & 0x1f001f001f001ful;			\
+	y = (y + (y >> 16u)) & 0x3f0000003ful;				\
+	y + (y >> 32u);					*/		\
+})
+//	y = y + (y >> 4u);						\
+//	(y & 0xf0f0f0f0f0f0f0ful) * 0x101010101010101ul >> 56;		\
+
+static inline uint64_t bwt_occ_0p(bwtint_t l, const uint64_t *p)
+{
+	uint64_t z, y = 0ul;
+	switch (l) {
+		case 3: z = -*(--p) - 1ul;
+			y = __occ_aux_p(z);
+		case 2: z = -*(--p) - 1ul;
+			y += __occ_aux_p(z);
+		default: z = -*(--p) - 1ul;
+			y += __occ_aux_p(z);
+	}
+	return y;
+}
+
+static inline uint64_t bwt_occ_xp(const uint64_t x, bwtint_t l, const uint64_t *p)
+{
+	uint64_t z, y = 0ul;
+	switch (l) {
+		case 3: z = *(--p) ^ x;
+			y = __occ_aux_p(z);
+		case 2: z = *(--p) ^ x;
+			y += __occ_aux_p(z);
+		default: z = *(--p) ^ x;
+			y += __occ_aux_p(z);
+	}
+	return y;
+}
+
+static inline uint64_t bwt_occ_3p(bwtint_t l, const uint64_t *p)
+{
+	uint64_t z, y = 0ul;
+	switch (l) {
+		case 3: z = *(--p);
+			y = __occ_aux_p(z);
+		case 2: z = *(--p);
+			y += __occ_aux_p(z);
+		default: z = *(--p);
+			y += __occ_aux_p(z);
+	}
+	return y;
+}
+
+
 
 static inline bwtint_t bwt_occ_0(bwtint_t l, const uint64_t *p)
 {
-	bwtint_t n = 0;
+	uint64_t z, y = 0ul;
 	switch (l) {
-		case 3: n += __occ_aux(~*(--p));
-		case 2: n += __occ_aux(~*(--p));
-		default: return n + __occ_aux(~*(--p));
+		case 3: z = -*(--p) - 1ul;
+			y += __occ_aux_p(z);
+		case 2: z = -*(--p) - 1ul;
+			y += __occ_aux_p(z);
+		default: z = -*(--p) - 1ul;
+			y += __occ_aux_p(z);
 	}
+	return __occ_aux_p2(y);
 }
 
 static inline bwtint_t bwt_occ_x(const uint64_t x, bwtint_t l, const uint64_t *p)
 {
-	bwtint_t n = 0;
+	uint64_t z, y = 0ul;
 	switch (l) {
-		case 3: n += __occ_aux(*(--p) ^ x);
-		case 2: n += __occ_aux(*(--p) ^ x);
-		default: return n + __occ_aux(*(--p) ^ x);
+		case 3: z = *(--p) ^ x;
+			y += __occ_aux_p(z);
+		case 2: z = *(--p) ^ x;
+			y += __occ_aux_p(z);
+		default: z = *(--p) ^ x;
+			y += __occ_aux_p(z);
 	}
+	return __occ_aux_p2(y);
 }
 
 static inline bwtint_t bwt_occ_3(bwtint_t l, const uint64_t *p)
 {
-	bwtint_t n = 0;
+	uint64_t z, y = 0ul;
 	switch (l) {
-		case 3: n += __occ_aux(*(--p));
-		case 2: n += __occ_aux(*(--p));
-		default: return n + __occ_aux(*(--p));
+		case 3: z = *(--p);
+			y += __occ_aux_p(z);
+		case 2: z = *(--p);
+			y += __occ_aux_p(z);
+		default: z = *(--p);
+			y += __occ_aux_p(z);
 	}
+	return __occ_aux_p2(y);
 }
 
 static inline bwtint_t bwt_occ(const uint64_t *p, const bwtint_t ko, bwtint_t k, const ubyte_t c)
 {
+	uint64_t z, y = 0ul;
 	bwtint_t n, l;
 	p += ko * 6;
 	n = ((uint32_t *)p)[c];
@@ -111,15 +189,23 @@ static inline bwtint_t bwt_occ(const uint64_t *p, const bwtint_t ko, bwtint_t k,
 	// calculate Occ up to the last k/32
 	switch (c) {
 		case 0: k &= 31;
-			if (l) n += bwt_occ_0(l, p += l);
-			n += __occ_aux(~(*p & occ_mask[k])) - (k^31);
+			if (l) y = bwt_occ_0p(l, p += l);
+			z = ~(*p & occ_mask[k]);
+			n -= (k^31);
 			break;
-		case 3: if (l) n += bwt_occ_3(l, p += l);
-			n += __occ_aux(*p & occ_mask[k&31]);
+		case 3: if (l) y = bwt_occ_3p(l, p += l);
+			z = *p & occ_mask[k&31];
 			break;
-		default: if (l) n += bwt_occ_x(n_mask[c], l, p += l);
-			n += __occ_aux((*p & occ_mask[k&31]) ^ n_mask[c]);
+		default: if (l) y = bwt_occ_xp(n_mask[c], l, p += l);
+			z = (*p & occ_mask[k&31]) ^ n_mask[c];
 	}
+	if (l != 3) {
+		y += __occ_aux_p(z);
+	} else {
+		n += __occ_aux_p2(y);
+		y = __occ_aux_p(z);
+	}
+	n += __occ_aux_p2(y);
 	return n;
 }
 
