@@ -67,11 +67,6 @@ static inline int __occ_aux(uint64_t y)
 	// count the number of 1s in y
 	y = (y & 0x1111111111111111ul) + (y >> 2 & 0x1111111111111111ul);
 	return ((y + (y >> 4)) & 0xf0f0f0f0f0f0f0ful) * 0x101010101010101ul >> 56;
-	// this, instead of return statement, also works:
-	//y = (y + (y >> 4u)) & 0x707070707070707ul; // at most 4 per f
-	//y = (y + (y >> 8u)) & 0xf000f000f000ful; // at most 8 per f
-	//y = (y + (y >> 16u)) & 0x1f0000001ful; // at most 16 per 1f
-	//return y + (y >> 32u);
 }
 
 #define __occ_aux_p(z) ({ 						\
@@ -82,13 +77,7 @@ static inline int __occ_aux(uint64_t y)
 #define __occ_aux_p2(y) ({						\
 	y = y + (y >> 4u);						\
 	(y & 0xf0f0f0f0f0f0f0ful) * 0x101010101010101ul >> 56;		\
-/*	y = (y + (y >> 4u)) & 0x0f0f0f0f0f0f0f0ful;			\
-	y = (y + (y >> 8u)) & 0x1f001f001f001ful;			\
-	y = (y + (y >> 16u)) & 0x3f0000003ful;				\
-	y + (y >> 32u);					*/		\
 })
-//	y = y + (y >> 4u);						\
-//	(y & 0xf0f0f0f0f0f0f0ful) * 0x101010101010101ul >> 56;		\
 
 #define bwt_occ_pn(z, y, l, n, trdp)				\
 	switch (l) {						\
@@ -110,48 +99,6 @@ static inline int __occ_aux(uint64_t y)
 		case 1: (z) = trdp;				\
 			(y) += __occ_aux_p(z);			\
 	}
-
-static inline bwtint_t bwt_occ_0(bwtint_t l, const uint64_t *p)
-{
-	uint64_t z, y = 0ul;
-	switch (l) {
-		case 3: z = -*(--p) - 1ul;
-			y += __occ_aux_p(z);
-		case 2: z = -*(--p) - 1ul;
-			y += __occ_aux_p(z);
-		default: z = -*(--p) - 1ul;
-			y += __occ_aux_p(z);
-	}
-	return __occ_aux_p2(y);
-}
-
-static inline bwtint_t bwt_occ_x(const uint64_t x, bwtint_t l, const uint64_t *p)
-{
-	uint64_t z, y = 0ul;
-	switch (l) {
-		case 3: z = *(--p) ^ x;
-			y += __occ_aux_p(z);
-		case 2: z = *(--p) ^ x;
-			y += __occ_aux_p(z);
-		default: z = *(--p) ^ x;
-			y += __occ_aux_p(z);
-	}
-	return __occ_aux_p2(y);
-}
-
-static inline bwtint_t bwt_occ_3(bwtint_t l, const uint64_t *p)
-{
-	uint64_t z, y = 0ul;
-	switch (l) {
-		case 3: z = *(--p);
-			y += __occ_aux_p(z);
-		case 2: z = *(--p);
-			y += __occ_aux_p(z);
-		default: z = *(--p);
-			y += __occ_aux_p(z);
-	}
-	return __occ_aux_p2(y);
-}
 
 static inline bwtint_t bwt_occ(const uint64_t *p, const bwtint_t ko, bwtint_t k, const ubyte_t c)
 {
