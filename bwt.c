@@ -90,49 +90,16 @@ static inline int __occ_aux(uint64_t y)
 //	y = y + (y >> 4u);						\
 //	(y & 0xf0f0f0f0f0f0f0ful) * 0x101010101010101ul >> 56;		\
 
-static inline uint64_t bwt_occ_0p(bwtint_t l, const uint64_t *p)
-{
-	uint64_t z, y = 0ul;
-	switch (l) {
-		case 3: z = -*(--p) - 1ul;
-			y = __occ_aux_p(z);
-		case 2: z = -*(--p) - 1ul;
-			y += __occ_aux_p(z);
-		default: z = -*(--p) - 1ul;
-			y += __occ_aux_p(z);
-	}
-	return y;
-}
-
-static inline uint64_t bwt_occ_xp(const uint64_t x, bwtint_t l, const uint64_t *p)
-{
-	uint64_t z, y = 0ul;
-	switch (l) {
-		case 3: z = *(--p) ^ x;
-			y = __occ_aux_p(z);
-		case 2: z = *(--p) ^ x;
-			y += __occ_aux_p(z);
-		default: z = *(--p) ^ x;
-			y += __occ_aux_p(z);
-	}
-	return y;
-}
-
-static inline uint64_t bwt_occ_3p(bwtint_t l, const uint64_t *p)
-{
-	uint64_t z, y = 0ul;
-	switch (l) {
-		case 3: z = *(--p);
-			y = __occ_aux_p(z);
-		case 2: z = *(--p);
-			y += __occ_aux_p(z);
-		default: z = *(--p);
-			y += __occ_aux_p(z);
-	}
-	return y;
-}
-
-
+#define bwt_occ_p(z, y, l, n, trdp)				\
+	switch (l) {						\
+		case 3: (z) = trdp;				\
+			(y) = __occ_aux_p(z);			\
+			n += __occ_aux_p2(y);			\
+		case 2: (z) = trdp;				\
+			(y) = __occ_aux_p(z);			\
+		case 1: (z) = trdp;				\
+			(y) += __occ_aux_p(z);			\
+	}							\
 
 static inline bwtint_t bwt_occ_0(bwtint_t l, const uint64_t *p)
 {
@@ -189,22 +156,17 @@ static inline bwtint_t bwt_occ(const uint64_t *p, const bwtint_t ko, bwtint_t k,
 	// calculate Occ up to the last k/32
 	switch (c) {
 		case 0: k &= 31;
-			if (l) y = bwt_occ_0p(l, p += l);
-			z = ~(*p & occ_mask[k]);
+			bwt_occ_p(z, y, l, n, -*(p++) - 1ul)
+			z = -(*p & occ_mask[k]) - 1ul;
 			n -= (k^31);
 			break;
-		case 3: if (l) y = bwt_occ_3p(l, p += l);
+		case 3: bwt_occ_p(z, y, l, n, *(p++))
 			z = *p & occ_mask[k&31];
 			break;
-		default: if (l) y = bwt_occ_xp(n_mask[c], l, p += l);
+		default: bwt_occ_p(z, y, l, n, *(p++) ^ n_mask[c])
 			z = (*p & occ_mask[k&31]) ^ n_mask[c];
 	}
-	if (l != 3) {
-		y += __occ_aux_p(z);
-	} else {
-		n += __occ_aux_p2(y);
-		y = __occ_aux_p(z);
-	}
+	y += __occ_aux_p(z);
 	n += __occ_aux_p2(y);
 	return n;
 }
