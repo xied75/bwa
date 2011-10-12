@@ -630,9 +630,13 @@ void bwa_sai2sam_pe_core(const char *prefix, char *const fn_sa[2], char *const f
 	int first = 1;
 
 	extern bwa_seqio_t *bwa_open_reads(int mode, const char *fn_fa);
+		/* // get_nprocs(), which is likely to be system dependent, is not provided in the patch.
         extern int get_nprocs(void);
 
         max_threads = get_nprocs();
+		*/
+
+		max_threads = MAX_CPUS; // with this, users may specify more threads than available CPU cores
        
         if(max_threads > MAX_CPUS)
           max_threads = MAX_CPUS;
@@ -905,7 +909,7 @@ int bwa_sai2sam_pe(int argc, char *argv[])
 		fprintf(stderr, "         -n INT   maximum hits to output for paired reads [%d]\n", popt->n_multi);
 		fprintf(stderr, "         -N INT   maximum hits to output for discordant pairs [%d]\n", popt->N_multi);
 		fprintf(stderr, "         -c FLOAT prior of chimeric rate (lower bound) [%.1le]\n", popt->ap_prior);
-        	fprintf(stderr, "         -f FILE  sam file to output results to [stdout]\n");
+		fprintf(stderr, "         -f FILE  sam file to output results to [stdout]\n");
 		fprintf(stderr, "         -r STR   read group header line such as `@RG\\tID:foo\\tSM:bar' [null]\n");
 		fprintf(stderr, "         -t       number of threads [%d]\n", num_sampe_threads);
 		fprintf(stderr, "         -T       dont resize read buffer for threads\n");
