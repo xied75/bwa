@@ -29,8 +29,12 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <time.h>
 #include <zlib.h>
 #include "utils.h"
+
+extern time_t _prog_start;
 
 FILE *err_xopen_core(const char *func, const char *fn, const char *mode)
 {
@@ -41,6 +45,7 @@ FILE *err_xopen_core(const char *func, const char *fn, const char *mode)
 		fprintf(stderr, "[%s] fail to open file '%s'. Abort!\n", func, fn);
 		abort();
 	}
+	// setvbuf(fp, NULL, _IOFBF, 1048576);
 	return fp;
 }
 FILE *err_xreopen_core(const char *func, const char *fn, const char *mode, FILE *fp)
@@ -51,6 +56,7 @@ FILE *err_xreopen_core(const char *func, const char *fn, const char *mode, FILE 
 		fprintf(stderr, "Abort!\n");
 		abort();
 	}
+	// setvbuf(fp, NULL, _IOFBF, 1048576);
 	return fp;
 }
 gzFile err_xzopen_core(const char *func, const char *fn, const char *mode)
@@ -62,6 +68,7 @@ gzFile err_xzopen_core(const char *func, const char *fn, const char *mode)
 		fprintf(stderr, "[%s] fail to open file '%s'. Abort!\n", func, fn);
 		abort();
 	}
+	// gzbuffer(fp, 524288);
 	return fp;
 }
 void err_fatal(const char *header, const char *fmt, ...)
@@ -79,4 +86,19 @@ void err_fatal_simple_core(const char *func, const char *msg)
 {
 	fprintf(stderr, "[%s] %s Abort!\n", func, msg);
 	abort();
+}
+
+clock_t clock(void)
+{
+	clock_t clks = 0;
+	struct timeval st;
+	time_t time_now;
+
+	// mck - use wall time ...
+
+	gettimeofday(&st, NULL);
+	time_now = st.tv_sec * 1000000L + (time_t)st.tv_usec;
+	clks = (clock_t)(((double)(time_now - _prog_start) / 1000000.0) * (double)CLOCKS_PER_SEC);
+
+	return clks;
 }

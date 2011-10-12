@@ -11,10 +11,19 @@
 #include "utils.h"
 #include "kstring.h"
 
+#include "bwatpx.h"
+
 int g_log_n[256];
 char *bwa_rg_line, *bwa_rg_id;
 
-void bwa_print_sam_PG();
+void bwa_print_sam_PG(void);
+extern void bwa_rg_tpx(int iidx, const bntseq_t *bns, int n_seqs1, int n_seqs2,
+                       bwa_seq_t *seqs, ubyte_t *pacseq, bntseq_t *ntbns);
+
+extern int num_sampe_threads;
+THR_BWA_RG_TPX thr_bwa_rg_info[MAX_CPUS];
+
+// -------------------
 
 void bwa_aln2seq_core(int n_aln, const bwt_aln1_t *aln, bwa_seq_t *s, int set_main, int n_multi)
 {
@@ -166,7 +175,7 @@ void bwa_cal_pac_pos(const char *prefix, int n_seqs, bwa_seq_t *seqs, int max_mm
  * forward strand. This happens when p->pos is calculated by
  * bwa_cal_pac_pos(). is_end_correct==0 if (*pos) gives the correct
  * coordinate. This happens only for color-converted alignment. */
-static bwa_cigar_t *refine_gapped_core(bwtint_t l_pac, const ubyte_t *pacseq, int len, const ubyte_t *seq, bwtint_t *_pos,
+bwa_cigar_t *refine_gapped_core(bwtint_t l_pac, const ubyte_t *pacseq, int len, const ubyte_t *seq, bwtint_t *_pos,
 									int ext, int *n_cigar, int is_end_correct)
 {
 	bwa_cigar_t *cigar = 0;
@@ -303,11 +312,34 @@ void bwa_correct_trimmed(bwa_seq_t *s)
 	s->len = s->full_len;
 }
 
+// -------------------
+
+void thr_bwa_rg_tpx(long idx)
+{
+  int iidx = (int)idx;
+
+  bwa_rg_tpx(iidx,
+             thr_bwa_rg_info[iidx].bns,
+             thr_bwa_rg_info[iidx].start,
+             thr_bwa_rg_info[iidx].end,
+             thr_bwa_rg_info[iidx].seqs,
+             thr_bwa_rg_info[iidx].pacseq,
+             thr_bwa_rg_info[iidx].ntbns);
+
+  return;
+}
+
+// -------------------
+
 void bwa_refine_gapped(const bntseq_t *bns, int n_seqs, bwa_seq_t *seqs, ubyte_t *_pacseq, bntseq_t *ntbns)
 {
 	ubyte_t *pacseq, *ntpac = 0;
-	int i, j;
-	kstring_t *str;
+#ifdef HAVE_PTHREAD
+	int i;
+	int srtn = 0;
+	pthread_t tid;
+	long delta = 0L;
+#endif // HAVE_PTHREAD
 
 	if (ntbns) { // in color space
 		ntpac = (ubyte_t*)calloc(ntbns->l_pac/4+1, 1);
@@ -320,62 +352,63 @@ void bwa_refine_gapped(const bntseq_t *bns, int n_seqs, bwa_seq_t *seqs, ubyte_t
 		rewind(bns->fp_pac);
 		fread(pacseq, 1, bns->l_pac/4+1, bns->fp_pac);
 	} else pacseq = _pacseq;
-	for (i = 0; i != n_seqs; ++i) {
-		bwa_seq_t *s = seqs + i;
-		seq_reverse(s->len, s->seq, 0); // IMPORTANT: s->seq is reversed here!!!
-		for (j = 0; j < s->n_multi; ++j) {
-			bwt_multi1_t *q = s->multi + j;
-			int n_cigar;
-			if (q->gap == 0) continue;
-			q->cigar = refine_gapped_core(bns->l_pac, pacseq, s->len, q->strand? s->rseq : s->seq, &q->pos,
-										  (q->strand? 1 : -1) * q->gap, &n_cigar, 1);
-			q->n_cigar = n_cigar;
-		}
-		if (s->type == BWA_TYPE_NO_MATCH || s->type == BWA_TYPE_MATESW || s->n_gapo == 0) continue;
-		s->cigar = refine_gapped_core(bns->l_pac, pacseq, s->len, s->strand? s->rseq : s->seq, &s->pos,
-									  (s->strand? 1 : -1) * (s->n_gapo + s->n_gape), &s->n_cigar, 1);
-	}
 
-	if (ntbns) { // in color space
-		for (i = 0; i < n_seqs; ++i) {
-			bwa_seq_t *s = seqs + i;
-			bwa_cs2nt_core(s, bns->l_pac, ntpac);
-			for (j = 0; j < s->n_multi; ++j) {
-				bwt_multi1_t *q = s->multi + j;
-				int n_cigar;
-				if (q->gap == 0) continue;
-				free(q->cigar);
-				q->cigar = refine_gapped_core(bns->l_pac, ntpac, s->len, q->strand? s->rseq : s->seq, &q->pos,
-											  (q->strand? 1 : -1) * q->gap, &n_cigar, 0);
-				q->n_cigar = n_cigar;
-			}
-			if (s->type != BWA_TYPE_NO_MATCH && s->cigar) { // update cigar again
-				free(s->cigar);
-				s->cigar = refine_gapped_core(bns->l_pac, ntpac, s->len, s->strand? s->rseq : s->seq, &s->pos,
-											  (s->strand? 1 : -1) * (s->n_gapo + s->n_gape), &s->n_cigar, 0);
-			}
-		}
-	}
+	// tpx
 
-	// generate MD tag
-	str = (kstring_t*)calloc(1, sizeof(kstring_t));
-	for (i = 0; i != n_seqs; ++i) {
-		bwa_seq_t *s = seqs + i;
-		if (s->type != BWA_TYPE_NO_MATCH) {
-			int nm;
-			s->md = bwa_cal_md1(s->n_cigar, s->cigar, s->len, s->pos, s->strand? s->rseq : s->seq,
-								bns->l_pac, ntbns? ntpac : pacseq, str, &nm);
-			s->nm = nm;
-		}
-	}
-	free(str->s); free(str);
+	// -----------------
 
-	// correct for trimmed reads
-	if (!ntbns) // trimming is only enabled for Illumina reads
-		for (i = 0; i < n_seqs; ++i) bwa_correct_trimmed(seqs + i);
+#ifdef HAVE_PTHREAD
+        if(num_sampe_threads > 1){
+
+          delta = n_seqs / num_sampe_threads;
+       
+          for(i=0;i<num_sampe_threads;i++){
+            thr_bwa_rg_info[i].end = delta * (i+1);
+            thr_bwa_rg_info[i].bns = bns;
+            thr_bwa_rg_info[i].seqs = seqs;
+            thr_bwa_rg_info[i].pacseq = pacseq;
+            thr_bwa_rg_info[i].ntbns = ntbns;
+          }
+       
+          thr_bwa_rg_info[num_sampe_threads-1].end = n_seqs;
+       
+          thr_bwa_rg_info[0].start = 0;
+       
+          for(i=1;i<num_sampe_threads;i++){
+            thr_bwa_rg_info[i].start = thr_bwa_rg_info[i-1].end;
+          }
+       
+          for(i=0;i<num_sampe_threads;i++){
+            srtn = pthread_create(&tid,NULL,(void *(*)(void *))thr_bwa_rg_tpx,(void *)(long)i);
+            if(srtn != 0){
+              fprintf(stderr,"[%s] pthread_create thr_bwa_rg_tpx error %d\n", __func__, srtn);
+              exit(1);
+            }
+            thr_bwa_rg_info[i].tid = tid;
+          }
+       
+          for(i=0;i<num_sampe_threads;i++){
+            pthread_join(thr_bwa_rg_info[i].tid,NULL);
+          }
+
+        }else{
+
+	  bwa_rg_tpx(0, bns, 0, n_seqs, seqs, pacseq, ntbns);
+
+	}
+#else // HAVE_PTHREAD
+	bwa_rg_tpx(0, bns, 0, n_seqs, seqs, pacseq, ntbns);
+#endif // HAVE_PTHREAD
+
+	// -----------------
+
+	// tpx
 
 	if (!_pacseq) free(pacseq);
+
 	free(ntpac);
+
+	return;
 }
 
 int64_t pos_end(const bwa_seq_t *p)
