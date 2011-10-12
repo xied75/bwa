@@ -6,9 +6,10 @@
 #include <sys/time.h>
 #include <time.h>
 #include "main.h"
+#include "utils.h"
 
 #ifndef PACKAGE_VERS
-# define PACKAGE_VERS 0.5.9-tpx
+# define PACKAGE_VERS 0.5.9-r20-tpx
 #endif
 
 // -------------------
@@ -107,5 +108,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "[main] unrecognized command '%s'\n", argv[1]);
 		return 1;
 	}
+        err_fflush(stdout);
+        err_fclose(stdout);
 	return 0;
 }
