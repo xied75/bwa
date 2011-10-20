@@ -9,7 +9,7 @@
 #include "utils.h"
 
 #ifndef PACKAGE_VERS
-# define PACKAGE_VERS 0.5.9-r20-tpx
+# define PACKAGE_VERS 0.5.9-r26-tpx
 #endif
 
 // -------------------
