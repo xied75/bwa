@@ -13,9 +13,7 @@
 #include "utils.h"
 
 #ifdef HAVE_PTHREAD
-#define THREAD_BLOCK_SIZE 1024
 #include <pthread.h>
-static pthread_mutex_t g_seq_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 gap_opt_t *gap_init_opt()
@@ -98,18 +96,7 @@ void bwa_cal_sa_reg_gap(int tid, bwt_t *const bwt[2], int n_seqs, bwa_seq_t *seq
 	for (i = 0; i != n_seqs; ++i) {
 		bwa_seq_t *p = seqs + i;
 #ifdef HAVE_PTHREAD
-		if (opt->n_threads > 1) {
-			pthread_mutex_lock(&g_seq_lock);
-			if (p->tid < 0) { // unassigned
-				int j;
-				for (j = i; j < n_seqs && j < i + THREAD_BLOCK_SIZE; ++j)
-					seqs[j].tid = tid;
-			} else if (p->tid != tid) {
-				pthread_mutex_unlock(&g_seq_lock);
-				continue;
-			}
-			pthread_mutex_unlock(&g_seq_lock);
-		}
+		if (i % opt->n_threads != tid) continue;
 #endif
 		p->sa = 0; p->type = BWA_TYPE_NO_MATCH; p->c1 = p->c2 = 0; p->n_aln = 0; p->aln = 0;
 		seq[0] = p->seq; seq[1] = p->rseq;
@@ -189,7 +176,7 @@ void bwa_aln_core(const char *prefix, const char *fn_fa, const gap_opt_t *opt)
 	}
 
 	// core loop
-	fwrite(opt, sizeof(gap_opt_t), 1, stdout);
+	err_fwrite(opt, sizeof(gap_opt_t), 1, stdout);
 	while ((seqs = bwa_read_seq(ks, 0x40000, &n_seqs, opt->mode, opt->trim_qual)) != 0) {
 		tot_seqs += n_seqs;
 		t = clock();
@@ -226,8 +213,8 @@ void bwa_aln_core(const char *prefix, const char *fn_fa, const gap_opt_t *opt)
 		fprintf(stderr, "[bwa_aln_core] write to the disk... ");
 		for (i = 0; i < n_seqs; ++i) {
 			bwa_seq_t *p = seqs + i;
-			fwrite(&p->n_aln, 4, 1, stdout);
-			if (p->n_aln) fwrite(p->aln, sizeof(bwt_aln1_t), p->n_aln, stdout);
+			err_fwrite(&p->n_aln, 4, 1, stdout);
+			if (p->n_aln) err_fwrite(p->aln, sizeof(bwt_aln1_t), p->n_aln, stdout);
 		}
 		fprintf(stderr, "%.2f sec\n", (float)(clock() - t) / CLOCKS_PER_SEC); t = clock();
 
@@ -246,7 +233,7 @@ int bwa_aln(int argc, char *argv[])
 	gap_opt_t *opt;
 
 	opt = gap_init_opt();
-	while ((c = getopt(argc, argv, "n:o:e:i:d:l:k:cLR:m:t:NM:O:E:q:f:b012IB:")) >= 0) {
+	while ((c = getopt(argc, argv, "n:o:e:i:d:l:k:cLR:m:t:NM:O:E:q:f:b012IYB:")) >= 0) {
 		switch (c) {
 		case 'n':
 			if (strstr(optarg, ".")) opt->fnr = atof(optarg), opt->max_diff = -1;
@@ -274,6 +261,7 @@ int bwa_aln(int argc, char *argv[])
 		case '1': opt->mode |= BWA_MODE_BAM_READ1; break;
 		case '2': opt->mode |= BWA_MODE_BAM_READ2; break;
 		case 'I': opt->mode |= BWA_MODE_IL13; break;
+		case 'Y': opt->mode |= BWA_MODE_CFY; break;
 		case 'B': opt->mode |= atoi(optarg) << 24; break;
 		default: return 1;
 		}
@@ -311,6 +299,7 @@ int bwa_aln(int argc, char *argv[])
 		fprintf(stderr, "         -0        use single-end reads only (effective with -b)\n");
 		fprintf(stderr, "         -1        use the 1st read in a pair (effective with -b)\n");
 		fprintf(stderr, "         -2        use the 2nd read in a pair (effective with -b)\n");
+		fprintf(stderr, "         -Y        filter Casava-filtered sequences\n");
 		fprintf(stderr, "\n");
 		return 1;
 	}
