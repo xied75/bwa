@@ -48,9 +48,9 @@ bsw2pestat_t bsw2_stat(int n, bwtsw2_t **buf, kstring_t *msg)
 	p25 = isize[(int)(.25 * k + .499)];
 	p50 = isize[(int)(.50 * k + .499)];
 	p75 = isize[(int)(.75 * k + .499)];
-	ksprintf(msg, "[%s] infer the insert size distribution from %d high-quality pairs.\n", __func__, k);
+	ksprintf(msg, "[%s] infer the insert size distribution from %d high-quality pairs.\n", __FUNCTION__, k);
 	if (k < 8) {
-		ksprintf(msg, "[%s] fail to infer the insert size distribution.\n", __func__);
+		ksprintf(msg, "[%s] fail to infer the insert size distribution.\n", __FUNCTION__);
 		free(isize);
 		r.failed = 1;
 		return r;
@@ -59,8 +59,8 @@ bsw2pestat_t bsw2_stat(int n, bwtsw2_t **buf, kstring_t *msg)
 	r.low  = tmp > max_len? tmp : max_len;
 	if (r.low < 1) r.low = 1;
 	r.high = (int)(p75 + OUTLIER_BOUND * (p75 - p25) + .499);
-	ksprintf(msg, "[%s] (25, 50, 75) percentile: (%d, %d, %d)\n", __func__, p25, p50, p75);
-	ksprintf(msg, "[%s] low and high boundaries for computing mean and std.dev: (%d, %d)\n", __func__, r.low, r.high);
+	ksprintf(msg, "[%s] (25, 50, 75) percentile: (%d, %d, %d)\n", __FUNCTION__, p25, p50, p75);
+	ksprintf(msg, "[%s] low and high boundaries for computing mean and std.dev: (%d, %d)\n", __FUNCTION__, r.low, r.high);
 	for (i = x = 0, r.avg = 0; i < k; ++i)
 		if (isize[i] >= r.low && isize[i] <= r.high)
 			r.avg += isize[i], ++x;
@@ -69,7 +69,7 @@ bsw2pestat_t bsw2_stat(int n, bwtsw2_t **buf, kstring_t *msg)
 		if (isize[i] >= r.low && isize[i] <= r.high)
 			r.std += (isize[i] - r.avg) * (isize[i] - r.avg);
 	r.std = sqrt(r.std / x);
-	ksprintf(msg, "[%s] mean and std.dev: (%.2f, %.2f)\n", __func__, r.avg, r.std);
+	ksprintf(msg, "[%s] mean and std.dev: (%.2f, %.2f)\n", __FUNCTION__, r.avg, r.std);
 	tmp  = (int)(p25 - 3. * (p75 - p25) + .499);
 	r.low  = tmp > max_len? tmp : max_len;
 	if (r.low < 1) r.low = 1;
@@ -77,7 +77,7 @@ bsw2pestat_t bsw2_stat(int n, bwtsw2_t **buf, kstring_t *msg)
 	if (r.low > r.avg - MAX_STDDEV * 4.) r.low = (int)(r.avg - MAX_STDDEV * 4. + .499);
 	r.low = tmp > max_len? tmp : max_len;
 	if (r.high < r.avg - MAX_STDDEV * 4.) r.high = (int)(r.avg + MAX_STDDEV * 4. + .499);
-	ksprintf(msg, "[%s] low and high boundaries for proper pairs: (%d, %d)\n", __func__, r.low, r.high);
+	ksprintf(msg, "[%s] low and high boundaries for proper pairs: (%d, %d)\n", __FUNCTION__, r.low, r.high);
 	free(isize);
 	return r;
 }
@@ -283,7 +283,7 @@ void bsw2_pair(const bsw2opt_t *opt, int64_t l_pac, const uint8_t *pac, int n, b
 			}
 		}
 	}
-	ksprintf(&msg, "[%s] #fixed=%d, #rescued=%d, #moved=%d\n", __func__, n_fixed, n_rescued, n_moved);
+	ksprintf(&msg, "[%s] #fixed=%d, #rescued=%d, #moved=%d\n", __FUNCTION__, n_fixed, n_rescued, n_moved);
 	fputs(msg.s, stderr);
 	free(msg.s);
 }

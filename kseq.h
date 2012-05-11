@@ -30,6 +30,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 #define __KS_TYPE(type_t)						\
 	typedef struct __kstream_t {				\
 		char *buf;								\

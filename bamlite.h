@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <zlib.h>
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 typedef gzFile bamFile;
 #define bam_open(fn, mode) gzopen(fn, mode)
 #define bam_dopen(fd, mode) gzdopen(fd, mode)

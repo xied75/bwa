@@ -1,11 +1,14 @@
 #include <zlib.h>
 #include <stdio.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <stdlib.h>
 #include "bntseq.h"
 #include "bwt.h"
 #include "kvec.h"
 #include "kseq.h"
+
+#include "glibc_win64_flat\getopt.h"
+
 KSEQ_INIT(gzFile, gzread)
 
 extern unsigned char nst_nt4_table[256];

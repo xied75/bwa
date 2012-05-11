@@ -40,31 +40,31 @@
 
 
 
-#define err_fatal_simple(msg) err_fatal_simple_core(__func__, msg)
-#define xopen(fn, mode) err_xopen_core(__func__, fn, mode)
-#define xreopen(fn, mode, fp) err_xreopen_core(__func__, fn, mode, fp)
-#define xzopen(fn, mode) err_xzopen_core(__func__, fn, mode)
-#define xassert(cond, msg) if ((cond) == 0) err_fatal_simple_core(__func__, msg)
+#define err_fatal_simple(msg) err_fatal_simple_core(__FUNCTION__, msg)
+#define xopen(fn, mode) err_xopen_core(__FUNCTION__, fn, mode)
+#define xreopen(fn, mode, fp) err_xreopen_core(__FUNCTION__, fn, mode, fp)
+#define xzopen(fn, mode) err_xzopen_core(__FUNCTION__, fn, mode)
+#define xassert(cond, msg) if ((cond) == 0) err_fatal_simple_core(__FUNCTION__, msg)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-	void err_fatal(const char *header, const char *fmt, ...);
-	void err_fatal_simple_core(const char *func, const char *msg);
-	FILE *err_xopen_core(const char *func, const char *fn, const char *mode);
-	FILE *err_xreopen_core(const char *func, const char *fn, const char *mode, FILE *fp);
-	gzFile err_xzopen_core(const char *func, const char *fn, const char *mode);
+    void err_fatal(const char *header, const char *fmt, ...);
+    void err_fatal_simple_core(const char *func, const char *msg);
+    FILE *err_xopen_core(const char *func, const char *fn, const char *mode);
+    FILE *err_xreopen_core(const char *func, const char *fn, const char *mode, FILE *fp);
+    gzFile err_xzopen_core(const char *func, const char *fn, const char *mode);
     size_t err_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
-	int err_fprintf(FILE *stream, const char *format, ...)
+    int err_fprintf(FILE *stream, const char *format, ...)
         ATTRIBUTE((format(printf, 2, 3)));
-	int err_printf(const char *format, ...)
+    int err_printf(const char *format, ...)
         ATTRIBUTE((format(printf, 1, 2)));
-	int err_fflush(FILE *stream);
-	int err_fclose(FILE *stream);
+    int err_fflush(FILE *stream);
+    int err_fclose(FILE *stream);
 
-	double cputime();
-	double realtime();
+    double cputime();
+    double realtime();
 
 #ifdef __cplusplus
 }

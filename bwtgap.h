@@ -4,6 +4,10 @@
 #include "bwt.h"
 #include "bwtaln.h"
 
+#include <stdlib.h>
+
+typedef uint32_t u_int32_t;
+
 typedef struct { // recursion stack
 	u_int32_t info; // score<<21 | i
 	u_int32_t n_mm:8, n_gapo:8, n_gape:8, state:2, n_seed_mm:6;

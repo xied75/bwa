@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <string.h>
 #include <zlib.h>
 #include <stdint.h>
@@ -8,6 +8,9 @@
 #include "utils.h"
 
 #include "kseq.h"
+
+#include "glibc_win64_flat\getopt.h"
+
 KSEQ_INIT(gzFile, gzread)
 
 typedef struct {

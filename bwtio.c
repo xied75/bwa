@@ -56,7 +56,7 @@ bwt_t *bwt_restore_bwt(const char *fn)
 	bwt = (bwt_t*)calloc(1, sizeof(bwt_t));
 	fp = xopen(fn, "rb");
 	fseek(fp, 0, SEEK_END);
-	bwt->bwt_size = (ftell(fp) - sizeof(bwtint_t) * 5) >> 2;
+	bwt->bwt_size = (_ftelli64(fp) - sizeof(bwtint_t) * 5) >> 2;
 	bwt->bwt = (uint32_t*)calloc(bwt->bwt_size, 4);
 	fseek(fp, 0, SEEK_SET);
 	fread(&bwt->primary, sizeof(bwtint_t), 1, fp);

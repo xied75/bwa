@@ -28,11 +28,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include "bntseq.h"
 #include "utils.h"
 #include "main.h"
 #include "bwt.h"
+
+#include "glibc_win64_flat/getopt.h"
+#include <stdint.h>
+
+typedef uint32_t u_int32_t;
 
 #ifdef _DIVBWT
 #include "divsufsort.h"

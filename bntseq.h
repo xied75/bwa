@@ -77,7 +77,7 @@ extern "C" {
 }
 #endif
 
-static inline int64_t bns_depos(const bntseq_t *bns, int64_t pos, int *is_rev)
+static __inline int64_t bns_depos(const bntseq_t *bns, int64_t pos, int *is_rev)
 {
 	return (*is_rev = (pos >= bns->l_pac))? (bns->l_pac<<1) - 1 - pos : pos;
 }

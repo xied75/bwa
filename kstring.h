@@ -16,7 +16,7 @@ typedef struct __kstring_t {
 } kstring_t;
 #endif
 
-static inline int kputs(const char *p, kstring_t *s)
+static __inline int kputs(const char *p, kstring_t *s)
 {
 	int l = strlen(p);
 	if (s->l + l + 1 >= s->m) {
@@ -29,7 +29,7 @@ static inline int kputs(const char *p, kstring_t *s)
 	return l;
 }
 
-static inline int kputc(int c, kstring_t *s)
+static __inline int kputc(int c, kstring_t *s)
 {
 	if (s->l + 1 >= s->m) {
 		s->m = s->l + 2;

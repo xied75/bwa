@@ -3,6 +3,7 @@
 #include "bwtaln.h"
 #include "utils.h"
 #include "bamlite.h"
+#include <string.h>
 
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
@@ -148,7 +149,7 @@ bwa_seq_t *bwa_read_seq(bwa_seqio_t *bs, int n_needed, int *n, int mode, int tri
 	long n_trimmed = 0, n_tot = 0;
 
 	if (l_bc > BWA_MAX_BCLEN) {
-		fprintf(stderr, "[%s] the maximum barcode length is %d.\n", __func__, BWA_MAX_BCLEN);
+		fprintf(stderr, "[%s] the maximum barcode length is %d.\n", __FUNCTION__, BWA_MAX_BCLEN);
 		return 0;
 	}
 	if (bs->is_bam) return bwa_read_bam(bs, n_needed, n, is_comp, trim_qual); // l_bc has no effect for BAM input
@@ -157,7 +158,7 @@ bwa_seq_t *bwa_read_seq(bwa_seqio_t *bs, int n_needed, int *n, int mode, int tri
 	while ((l = kseq_read(seq)) >= 0) {
 		if ((mode & BWA_MODE_CFY) && (seq->comment.l != 0)) {
 			// skip reads that are marked to be filtered by Casava
-			char *s = index(seq->comment.s, ':');
+			char *s = strchr(seq->comment.s, ':');
 			if (s && *(++s) == 'Y') {
 				continue;
 			}

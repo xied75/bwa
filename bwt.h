@@ -40,6 +40,10 @@ typedef unsigned char ubyte_t;
 
 typedef uint64_t bwtint_t;
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 typedef struct {
 	bwtint_t primary; // S^{-1}(0), or the primary index of BWT
 	bwtint_t L2[5]; // C(), cumulative count

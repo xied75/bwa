@@ -31,6 +31,10 @@
 
 #include <stdint.h>
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 #define KEY(V, I, p, h)					( V[ I[p] + h ] )
 #define INSERT_SORT_NUM_ITEM	16
 

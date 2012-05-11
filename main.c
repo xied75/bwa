@@ -66,11 +66,11 @@ int main(int argc, char *argv[])
 	err_fflush(stdout);
 	err_fclose(stdout);
 	if (ret == 0) {
-		fprintf(stderr, "[%s] Version: %s\n", __func__, PACKAGE_VERSION);
-		fprintf(stderr, "[%s] CMD:", __func__);
+		fprintf(stderr, "[%s] Version: %s\n", __FUNCTION__, PACKAGE_VERSION);
+		fprintf(stderr, "[%s] CMD:", __FUNCTION__);
 		for (i = 0; i < argc; ++i)
 			fprintf(stderr, " %s", argv[i]);
-		fprintf(stderr, "\n[%s] Real time: %.3f sec; CPU: %.3f sec\n", __func__, realtime() - t_real, cputime());
+		fprintf(stderr, "\n[%s] Real time: %.3f sec; CPU: %.3f sec\n", __FUNCTION__, realtime() - t_real, cputime());
 	}
 	return 0;
 }

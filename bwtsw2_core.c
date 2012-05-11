@@ -1,12 +1,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/resource.h>
+//#include <sys/resource.h>
 #include <assert.h>
 #include "bwt_lite.h"
 #include "bwtsw2.h"
 #include "bwt.h"
 #include "kvec.h"
+
+#include "glibc_win64_flat/stdlib.h"
 
 typedef struct {
 	bwtint_t k, l;
@@ -207,12 +209,13 @@ static inline bsw2cell_t *push_array_p(bsw2entry_t *e)
 	return e->array + e->n;
 }
 
-static inline double time_elapse(const struct rusage *curr, const struct rusage *last)
-{
-	long t1 = (curr->ru_utime.tv_sec - last->ru_utime.tv_sec) + (curr->ru_stime.tv_sec - last->ru_stime.tv_sec);
-	long t2 = (curr->ru_utime.tv_usec - last->ru_utime.tv_usec) + (curr->ru_stime.tv_usec - last->ru_stime.tv_usec);
-	return (double)t1 + t2 * 1e-6;
-}
+//static inline double time_elapse(const struct rusage *curr, const struct rusage *last)
+//{
+//	long t1 = (curr->ru_utime.tv_sec - last->ru_utime.tv_sec) + (curr->ru_stime.tv_sec - last->ru_stime.tv_sec);
+//	long t2 = (curr->ru_utime.tv_usec - last->ru_utime.tv_usec) + (curr->ru_stime.tv_usec - last->ru_stime.tv_usec);
+//	return (double)t1 + t2 * 1e-6;
+//}
+
 /* --- END: utilities --- */
 
 /* --- BEGIN: processing partial hits --- */
@@ -447,7 +450,7 @@ bwtsw2_t **bsw2_core(const bntseq_t *bns, const bsw2opt_t *opt, const bwtl_t *ta
 	bsw2stack_t *stack = (bsw2stack_t*)pool->stack;
 	bwtsw2_t *b, *b1, **b_ret;
 	int i, j, score_mat[16], *heap, heap_size, n_tot = 0;
-	struct rusage curr, last;
+	//struct rusage curr, last;
 	khash_t(qintv) *rhash;
 	khash_t(64) *chash;
 
@@ -469,8 +472,8 @@ bwtsw2_t **bsw2_core(const bntseq_t *bns, const bsw2opt_t *opt, const bwtl_t *ta
 	b1 = (bwtsw2_t*)calloc(1, sizeof(bwtsw2_t));
 	b_ret = calloc(2, sizeof(void*));
 	b_ret[0] = b; b_ret[1] = b1;
-	// initialize timer
-	getrusage(0, &last);
+	//// initialize timer
+	//getrusage(0, &last);
 	// the main loop: traversal of the DAG
 	while (!stack_isempty(stack)) {
 		int old_n, tj;
@@ -599,7 +602,7 @@ bwtsw2_t **bsw2_core(const bntseq_t *bns, const bsw2opt_t *opt, const bwtl_t *ta
 		} // ~for(tj)
 		mp_free(stack->pool, v);
 	} // while(top)
-	getrusage(0, &curr);
+	//getrusage(0, &curr);
 	for (i = 0; i < 2; ++i)
 		for (j = 0; j < b_ret[i]->n; ++j)
 			b_ret[i]->hits[j].n_seeds = 0;

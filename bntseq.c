@@ -29,12 +29,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include "bntseq.h"
 #include "main.h"
 #include "utils.h"
 
 #include "kseq.h"
+
+#include "glibc_win64_flat/getopt.h"
+#include "glibc_win64_flat/stdlib.h"
+
 KSEQ_INIT(gzFile, gzread)
 
 unsigned char nst_nt4_table[256] = {
