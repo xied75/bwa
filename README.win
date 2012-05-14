@@ -1,0 +1,31 @@
+
+BWA Windows x64
+
+Dong Xie, 2012-05-14
+
+=========================================
+
+How to compile: (Draft)
+
+You need: Microsoft Visual Studio 2010 (with C++ installed, or C++ Express edition);
+          Microsoft Windows SDK v7.1;
+		  
+
+Start -> Microsoft Visual Studio 2010 -> Visual Studio Tools ->
+  Visual Studio x64 Win64 Command Prompt (2010)
+  
+In this cmd, cd to vstudio directory, then run,
+  msbuild.exe BWA.vcxproj
+(for debug build)
+  msbuild.exe BWA.vcxproj /p:Configuration=Release
+(for release build)
+
+You'll see hundreds of warning msg, that's ok, you might want to study these.
+
+bwa.exe will be inside x64\Debug or x64\Release.
+
+
+==========================================
+
+BWA.sln, BWA.vcxproj.filters; these two files are provided in case you want
+to open the solution/project in Visual Studio, not needed to run msbuild.

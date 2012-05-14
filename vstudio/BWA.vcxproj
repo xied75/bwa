@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{65DF14BB-37C0-4E37-AC74-EA87BE7E1982}</ProjectGuid>
+    <RootNamespace>BWA</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetName>bwa</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetName>bwa</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_USE_MATH_DEFINES;THREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\zlib\Debug\zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <Version>0.1</Version>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_USE_MATH_DEFINES;THREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>..\zlib\Release\zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <Version>0.1</Version>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\bamlite.h" />
+    <ClInclude Include="..\bntseq.h" />
+    <ClInclude Include="..\bwase.h" />
+    <ClInclude Include="..\bwt.h" />
+    <ClInclude Include="..\bwtaln.h" />
+    <ClInclude Include="..\bwtgap.h" />
+    <ClInclude Include="..\bwtsw2.h" />
+    <ClInclude Include="..\bwt_lite.h" />
+    <ClInclude Include="..\khash.h" />
+    <ClInclude Include="..\kseq.h" />
+    <ClInclude Include="..\ksort.h" />
+    <ClInclude Include="..\kstring.h" />
+    <ClInclude Include="..\ksw.h" />
+    <ClInclude Include="..\kvec.h" />
+    <ClInclude Include="..\main.h" />
+    <ClInclude Include="..\QSufSort.h" />
+    <ClInclude Include="..\stdaln.h" />
+    <ClInclude Include="..\utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\bamlite.c" />
+    <ClCompile Include="..\bntseq.c" />
+    <ClCompile Include="..\bwape.c" />
+    <ClCompile Include="..\bwase.c" />
+    <ClCompile Include="..\bwaseqio.c" />
+    <ClCompile Include="..\bwt.c" />
+    <ClCompile Include="..\bwtaln.c" />
+    <ClCompile Include="..\bwtgap.c" />
+    <ClCompile Include="..\bwtindex.c" />
+    <ClCompile Include="..\bwtio.c" />
+    <ClCompile Include="..\bwtmisc.c" />
+    <ClCompile Include="..\bwtsw2_aux.c" />
+    <ClCompile Include="..\bwtsw2_chain.c" />
+    <ClCompile Include="..\bwtsw2_core.c" />
+    <ClCompile Include="..\bwtsw2_main.c" />
+    <ClCompile Include="..\bwtsw2_pair.c" />
+    <ClCompile Include="..\bwt_gen.c" />
+    <ClCompile Include="..\bwt_lite.c" />
+    <ClCompile Include="..\cs2nt.c" />
+    <ClCompile Include="..\fastmap.c" />
+    <ClCompile Include="..\glibc_win64_flat\drand48-iter.c" />
+    <ClCompile Include="..\glibc_win64_flat\drand48.c" />
+    <ClCompile Include="..\glibc_win64_flat\erand48_r.c" />
+    <ClCompile Include="..\glibc_win64_flat\getopt.c" />
+    <ClCompile Include="..\glibc_win64_flat\lrand48.c" />
+    <ClCompile Include="..\glibc_win64_flat\nrand48_r.c" />
+    <ClCompile Include="..\glibc_win64_flat\srand48.c" />
+    <ClCompile Include="..\glibc_win64_flat\srand48_r.c" />
+    <ClCompile Include="..\glibc_win64_flat\s_erf.c" />
+    <ClCompile Include="..\is.c" />
+    <ClCompile Include="..\kstring.c" />
+    <ClCompile Include="..\ksw.c" />
+    <ClCompile Include="..\main.c" />
+    <ClCompile Include="..\QSufSort.c" />
+    <ClCompile Include="..\simple_dp.c" />
+    <ClCompile Include="..\stdaln.c" />
+    <ClCompile Include="..\utils.c" />
+    <ClCompile Include="..\win64_util\gettimeofday.c" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
