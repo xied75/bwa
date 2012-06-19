@@ -29,14 +29,14 @@
 #endif
 
 typedef struct {
-	bwtint_t w;
-	int bid;
+    bwtint_t w;
+    int bid;
 } bwt_width_t;
 
 typedef struct {
-	uint32_t n_mm:16, n_gapo:8, n_gape:8;
-	bwtint_t k, l;
-	int score;
+    uint32_t n_mm:16, n_gapo:8, n_gape:8;
+    bwtint_t k, l;
+    int score;
 } bwt_aln1_t;
 
 typedef uint16_t bwa_cigar_t;
@@ -51,36 +51,36 @@ typedef uint16_t bwa_cigar_t;
 #define __cigar_create(__op, __len) ((__op)<<CIGAR_OP_SHIFT | (__len))
 
 typedef struct {
-	uint32_t n_cigar:15, gap:8, mm:8, strand:1;
-	bwtint_t pos;
-	bwa_cigar_t *cigar;
+    uint32_t n_cigar:15, gap:8, mm:8, strand:1;
+    bwtint_t pos;
+    bwa_cigar_t *cigar;
 } bwt_multi1_t;
 
 typedef struct {
-	char *name;
-	ubyte_t *seq, *rseq, *qual;
-	uint32_t len:20, strand:1, type:2, dummy:1, extra_flag:8;
-	uint32_t n_mm:8, n_gapo:8, n_gape:8, mapQ:8;
-	int score;
-	int clip_len;
-	// alignments in SA coordinates
-	int n_aln;
-	bwt_aln1_t *aln;
-	// multiple hits
-	int n_multi;
-	bwt_multi1_t *multi;
-	// alignment information
-	bwtint_t sa, pos;
-	uint64_t c1:28, c2:28, seQ:8; // number of top1 and top2 hits; single-end mapQ
-	int n_cigar;
-	bwa_cigar_t *cigar;
-	// for multi-threading only
-	int tid;
-	// barcode
-	char bc[BWA_MAX_BCLEN+1]; // null terminated; up to BWA_MAX_BCLEN bases
-	// NM and MD tags
-	uint32_t full_len:20, nm:12;
-	char *md;
+    char *name;
+    ubyte_t *seq, *rseq, *qual;
+    uint32_t len:20, strand:1, type:2, dummy:1, extra_flag:8;
+    uint32_t n_mm:8, n_gapo:8, n_gape:8, mapQ:8;
+    int score;
+    int clip_len;
+    // alignments in SA coordinates
+    int n_aln;
+    bwt_aln1_t *aln;
+    // multiple hits
+    int n_multi;
+    bwt_multi1_t *multi;
+    // alignment information
+    bwtint_t sa, pos;
+    uint64_t c1:28, c2:28, seQ:8; // number of top1 and top2 hits; single-end mapQ
+    int n_cigar;
+    bwa_cigar_t *cigar;
+    // for multi-threading only
+    int tid;
+    // barcode
+    char bc[BWA_MAX_BCLEN+1]; // null terminated; up to BWA_MAX_BCLEN bases
+    // NM and MD tags
+    uint32_t full_len:20, nm:12;
+    char *md;
 } bwa_seq_t;
 
 #define BWA_MODE_GAPE       0x01
@@ -95,26 +95,27 @@ typedef struct {
 #define BWA_MODE_IL13       0x200
 
 typedef struct {
-	int s_mm, s_gapo, s_gape;
-	int mode; // bit 24-31 are the barcode length
-	int indel_end_skip, max_del_occ, max_entries;
-	float fnr;
-	int max_diff, max_gapo, max_gape;
-	int max_seed_diff, seed_len;
-	int n_threads;
-	int max_top2;
-	int trim_qual;
+    int s_mm, s_gapo, s_gape;
+    int mode; // bit 24-31 are the barcode length
+    int indel_end_skip, max_del_occ, max_entries;
+    float fnr;
+    int max_diff, max_gapo, max_gape;
+    int max_seed_diff, seed_len;
+    int n_threads;
+    int max_top2;
+    int trim_qual;
 } gap_opt_t;
 
 #define BWA_PET_STD   1
 #define BWA_PET_SOLID 2
 
 typedef struct {
-	int max_isize, force_isize;
-	int max_occ;
-	int n_multi, N_multi;
-	int type, is_sw, is_preload;
-	double ap_prior;
+    int max_isize, force_isize;
+    int max_occ;
+    int n_multi, N_multi;
+    int type, is_sw, is_preload;
+    double ap_prior;
+    int n_threads;
 } pe_opt_t;
 
 struct __bwa_seqio_t;
@@ -124,27 +125,27 @@ typedef struct __bwa_seqio_t bwa_seqio_t;
 extern "C" {
 #endif
 
-	gap_opt_t *gap_init_opt();
-	void bwa_aln_core(const char *prefix, const char *fn_fa, const gap_opt_t *opt);
+    gap_opt_t *gap_init_opt();
+    void bwa_aln_core(const char *prefix, const char *fn_fa, const gap_opt_t *opt);
 
-	bwa_seqio_t *bwa_seq_open(const char *fn);
-	bwa_seqio_t *bwa_bam_open(const char *fn, int which);
-	void bwa_seq_close(bwa_seqio_t *bs);
-	void seq_reverse(int len, ubyte_t *seq, int is_comp);
-	bwa_seq_t *bwa_read_seq(bwa_seqio_t *seq, int n_needed, int *n, int mode, int trim_qual);
-	void bwa_free_read_seq(int n_seqs, bwa_seq_t *seqs);
+    bwa_seqio_t *bwa_seq_open(const char *fn);
+    bwa_seqio_t *bwa_bam_open(const char *fn, int which);
+    void bwa_seq_close(bwa_seqio_t *bs);
+    void seq_reverse(int len, ubyte_t *seq, int is_comp);
+    bwa_seq_t *bwa_read_seq(bwa_seqio_t *seq, int n_needed, int *n, int mode, int trim_qual);
+    void bwa_free_read_seq(int n_seqs, bwa_seq_t *seqs);
 
-	int bwa_cal_maxdiff(int l, double err, double thres);
-	void bwa_cal_sa_reg_gap(int tid, bwt_t *const bwt, int n_seqs, bwa_seq_t *seqs, const gap_opt_t *opt);
+    int bwa_cal_maxdiff(int l, double err, double thres);
+    void bwa_cal_sa_reg_gap(int tid, bwt_t *const bwt, int n_seqs, bwa_seq_t *seqs, const gap_opt_t *opt);
 
-	void bwa_cs2nt_core(bwa_seq_t *p, bwtint_t l_pac, ubyte_t *pac);
+    void bwa_cs2nt_core(bwa_seq_t *p, bwtint_t l_pac, ubyte_t *pac);
 
 
-	/* rgoya: Temporary clone of aln_path2cigar to accomodate for bwa_cigar_t,
-	__cigar_op and __cigar_len while keeping stdaln stand alone */
+    /* rgoya: Temporary clone of aln_path2cigar to accomodate for bwa_cigar_t,
+    __cigar_op and __cigar_len while keeping stdaln stand alone */
 #include "stdaln.h"
 
-	bwa_cigar_t *bwa_aln_path2cigar(const path_t *path, int path_len, int *n_cigar);
+    bwa_cigar_t *bwa_aln_path2cigar(const path_t *path, int path_len, int *n_cigar);
 
 #ifdef __cplusplus
 }

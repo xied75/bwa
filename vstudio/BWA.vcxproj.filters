@@ -13,11 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\win64_util">
-      <UniqueIdentifier>{f00277c5-aa13-41be-92e1-c7fdcccccd0d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\glibc_win64_flat">
-      <UniqueIdentifier>{428708e3-984e-4f62-85b5-ce0162f8ec27}</UniqueIdentifier>
+      <UniqueIdentifier>{04712c4b-ee90-45cc-9bef-e61864203a69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\win64_util">
+      <UniqueIdentifier>{f5208511-16b4-4772-8d87-1493f351cb9b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -161,8 +161,8 @@
     <ClCompile Include="..\utils.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\win64_util\gettimeofday.c">
-      <Filter>Source Files\win64_util</Filter>
+    <ClCompile Include="..\bwape-mt.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\glibc_win64_flat\drand48.c">
       <Filter>Source Files\glibc_win64_flat</Filter>
@@ -190,6 +190,12 @@
     </ClCompile>
     <ClCompile Include="..\glibc_win64_flat\nrand48_r.c">
       <Filter>Source Files\glibc_win64_flat</Filter>
+    </ClCompile>
+    <ClCompile Include="..\win64_util\gettimeofday.c">
+      <Filter>Source Files\win64_util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\win64_util\Win32_util.c">
+      <Filter>Source Files\win64_util</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

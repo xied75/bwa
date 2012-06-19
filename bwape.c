@@ -61,6 +61,11 @@ bntseq_t *bwa_open_nt(const char *prefix);
 void bwa_print_sam_SQ(const bntseq_t *bns);
 void bwa_print_sam_PG();
 
+#ifdef THREAD
+// in bwape-mt.c
+extern void bwa_sai2sam_pe_core_mt(const char *prefix, char *const fn_sa[2], char *const fn_fa[2], pe_opt_t *popt);
+#endif
+
 pe_opt_t *bwa_init_pe_opt()
 {
     pe_opt_t *po;
@@ -73,6 +78,7 @@ pe_opt_t *bwa_init_pe_opt()
     po->type = BWA_PET_STD;
     po->is_sw = 1;
     po->ap_prior = 1e-5;
+    po->n_threads = 1;
     return po;
 }
 
@@ -102,7 +108,7 @@ static double ierfc(double x) // inverse erfc(); iphi(x) = M_SQRT2 *ierfc(2 * x)
 // for normal distribution, this is about 3std
 #define OUTLIER_BOUND 2.0
 
-static int infer_isize(int n_seqs, bwa_seq_t *seqs[2], isize_info_t *ii, double ap_prior, int64_t L)
+int infer_isize(int n_seqs, bwa_seq_t *seqs[2], isize_info_t *ii, double ap_prior, int64_t L)
 {
     uint64_t x, *isizes, n_ap = 0;
     int n, i, tot, p25, p75, p50, max_len = 1, tmp;
@@ -172,7 +178,7 @@ static int infer_isize(int n_seqs, bwa_seq_t *seqs[2], isize_info_t *ii, double 
     return 0;
 }
 
-static int pairing(bwa_seq_t *p[2], pe_data_t *d, const pe_opt_t *opt, int s_mm, const isize_info_t *ii)
+int pairing(bwa_seq_t *p[2], pe_data_t *d, const pe_opt_t *opt, int s_mm, const isize_info_t *ii)
 {
     int i, j, o_n, subo_n, cnt_chg = 0, low_bound = ii->low, max_len;
     uint64_t o_score, subo_score;
@@ -776,7 +782,7 @@ int bwa_sai2sam_pe(int argc, char *argv[])
     int c;
     pe_opt_t *popt;
     popt = bwa_init_pe_opt();
-    while ((c = getopt(argc, argv, "a:o:sPn:N:c:f:Ar:")) >= 0) {
+    while ((c = getopt(argc, argv, "a:o:sPn:N:c:f:t:Ar:")) >= 0) {
         switch (c) {
         case 'r':
             if (bwa_set_rg(optarg) < 0) {
@@ -792,6 +798,7 @@ int bwa_sai2sam_pe(int argc, char *argv[])
         case 'N': popt->N_multi = atoi(optarg); break;
         case 'c': popt->ap_prior = atof(optarg); break;
         case 'f': xreopen(optarg, "w", stdout); break;
+        case 't': popt->n_threads = atoi(optarg); break;
         case 'A': popt->force_isize = 1; break;
         default: return 1;
         }
@@ -806,6 +813,7 @@ int bwa_sai2sam_pe(int argc, char *argv[])
         fprintf(stderr, "         -N INT   maximum hits to output for discordant pairs [%d]\n", popt->N_multi);
         fprintf(stderr, "         -c FLOAT prior of chimeric rate (lower bound) [%.1le]\n", popt->ap_prior);
         fprintf(stderr, "         -f FILE  sam file to output results to [stdout]\n");
+        fprintf(stderr, "         -t INT   number of threads [%d]\n", popt->n_threads);
         fprintf(stderr, "         -r STR   read group header line such as `@RG\\tID:foo\\tSM:bar' [null]\n");
         fprintf(stderr, "         -P       preload index into memory (for base-space reads only)\n");
         fprintf(stderr, "         -s       disable Smith-Waterman for the unmapped mate\n");
@@ -816,7 +824,16 @@ int bwa_sai2sam_pe(int argc, char *argv[])
         fprintf(stderr, "\n");
         return 1;
     }
+
+#ifdef THREAD
+    if (popt->n_threads <= 1) // no multi-threading at all
+        bwa_sai2sam_pe_core(argv[optind], argv + optind + 1, argv + optind+3, popt);
+    else
+        bwa_sai2sam_pe_core_mt(argv[optind], argv + optind + 1, argv + optind+3, popt);
+#else
     bwa_sai2sam_pe_core(argv[optind], argv + optind + 1, argv + optind+3, popt);
+#endif
+    
     free(bwa_rg_line); free(bwa_rg_id);
     free(popt);
     return 0;
